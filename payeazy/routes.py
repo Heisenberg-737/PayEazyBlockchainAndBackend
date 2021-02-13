@@ -22,8 +22,9 @@ def employer_profile():
     name = content["name"]
     email = content["email"]
     address = content["address"]
+    password = content["password"]
 
-    emp = Employer(name=name, email=email, address=address)
+    emp = Employer(name=name, email=email, address=address, password=password)
 
     db.session.add(emp)
     db.session.commit()
@@ -37,15 +38,63 @@ def freelancer_profile():
     name = content["name"]
     email = content["email"]
     address = content["address"]
-    balance = 0
+    password = content["password"]
 
     free = Freelancer(name=name, email=email,
-                      address=address, current_balance=balance)
+                      address=address, password=password)
 
     db.session.add(free)
     db.session.commit()
 
     return 'New freelancer added', 200
+
+
+@app.route('/backend/freelogin', methods=["POST", "GET"])
+def freelancer_login():
+    content = request.get_json()
+    email = content["email"]
+    password = content["password"]
+
+    free = Freelancer.query.filter(Freelancer.email == email, Freelancer.password == password)
+    if not free:
+        return 'Invalid Credential', 400
+
+    address = free.address
+    current_balance = getAccountBalance(address)
+
+
+    List = []
+    Dict = {
+        'name': free.name,
+        'current_balance': current_balance
+    }
+    List.append(Dict)
+
+    return json.dumps(List)
+
+
+@app.route('/backend/emplogin', methods=["POST", "GET"])
+def employer_login():
+    content = request.get_json()
+    email = content["email"]
+    password = content["password"]
+
+    emp = Employer.query.filter(
+        Employer.email == email, Employer.password == password)
+    if not emp:
+        return 'Invalid Credential', 400
+
+    address = emp.address
+    current_balance = getAccountBalance(address)
+
+    List = []
+    Dict = {
+        'name': emp.name,
+        'current_balance': current_balance
+    }
+    List.append(Dict)
+
+    return json.dumps(List)
 
 
 @app.route('/backend/freeworking', methods=["GET", "POST"])
@@ -62,8 +111,6 @@ def freelancer_working():
     List = []
     Dict = {}
 
-    current_balance = getAccountBalance(emp_address)
-
     for row in rows:
         Dict = {
             'sno': row.sno,
@@ -74,8 +121,7 @@ def freelancer_working():
             'deadline': row.deadline,
             'days_hours_work': row.days_hours_work,
             'rate_day_hour': row.rate_day_hour,
-            'proposed_amount': row.proposed_amount,
-            'current_balance_employer': current_balance
+            'proposed_amount': row.proposed_amount
         }
         List.append(Dict)
 
@@ -225,16 +271,11 @@ def project_working():
     content = request.get_json()
     free_email = content["free_email"]
 
-    free = Freelancer.query.filter(Freelancer.email == free_email).first()
-    free_address = free.address
-
     rows = CurrentProjects.query.filter(
         CurrentProjects.free_email == free_email).all()
 
     List = []
     Dict = {}
-
-    current_balance = getAccountBalance(free_address)
 
     for row in rows:
         Dict = {
@@ -246,8 +287,7 @@ def project_working():
             'deadline': row.deadline,
             'days_hours_work': row.days_hours_work,
             'rate_day_hour': row.rate_day_hour,
-            'proposed_amount': row.proposed_amount,
-            'current_balance_freelancer': current_balance
+            'proposed_amount': row.proposed_amount
         }
         List.append(Dict)
 
