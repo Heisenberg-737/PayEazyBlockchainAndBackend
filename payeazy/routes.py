@@ -1,10 +1,10 @@
 import json
 from flask import request, jsonify, g
-from payeazy.models import CurrentProjects, Transaction, Employer, Freelancer, db
+from payeazy.models import CurrentProjects, Employer, Freelancer, db
 from payeazy import app
 import datetime
 from datetime import timedelta
-from block import getAccountBalance, callconstructor, transferMoneyToFreelancer, addFreelancerToContract, transferMoneyToFamilyMember
+from block import getAccountBalance, callconstructor, transferMoneyToFreelancer, addFreelancerToContract, transferMoneyToFamilyMember, contract
 
 # Frontend Routes
 
@@ -90,6 +90,7 @@ def employer_login():
     List = []
     Dict = {
         'name': emp.name,
+        'email': email,
         'current_balance': current_balance
     }
     List.append(Dict)
@@ -143,23 +144,14 @@ def freelancer_payment():
         callconstructor(row.rate_day_hour, row.days_hours_work,
                         rate_for_leave_deduct)
 
+        contract.functions.setVals(row.rate_day_hour, row.days_hours_work, rate_for_leave_deduct).transact()
+
         hex_tr = transferMoneyToFreelancer(
             row.emp_address, row.free_address, private_key, no_of_leaves)
 
         Dict = {'hex': hex_tr}
         List = []
         List.append(Dict)
-
-        transact = Transaction(emp_name=row.emp_name, emp_email=row.emp_email,
-                               free_name=row.free_name, free_email=row.free_email,
-                               project=row.project, date_started=row.date_started, deadline=row.deadline,
-                               days_hours_work=row.no_days_hours, rate_day_hour=row.rate_day_hour,
-                               proposed_amount=row.proposed_amount, no_of_leaves=no_of_leaves,
-                               rate_for_leave_deduct=rate_for_leave_deduct, amount_paid=amount_paid,
-                               emp_address=row.emp_address, free_address=row.free_address)
-
-        db.session.add(transact)
-        db.session.commit()
 
         db.session.delete(row)
         db.session.commit()
@@ -204,66 +196,6 @@ def add_project():
     db.session.commit()
 
     return 'New project added', 200
-
-
-@app.route('/backend/employerhistory', methods=["GET"])
-def employerhistory():
-    content = request.get_json()
-    email = content["emp_email"]
-
-    rows = Transaction.query.filter(Transaction.emp_email == email).all()
-
-    List = []
-    Dict = {}
-
-    for row in rows:
-        Dict = {
-            'free_name': row.free_name,
-            'free_email': row.free_email,
-            'project': row.project,
-            'date_started': row.date_started,
-            'deadline': row.deadline,
-            'days_hours_work': row.days_hours_work,
-            'rate_day_hour': row.rate_day_hour,
-            'proposed_amount': row.proposed_amount,
-            'no_of_leaves': row.no_of_leaves,
-            'rate_for_leave_deduct': row.rate_for_leave_deduct,
-            'amount_paid': row.amount_paid,
-            'free_address': row.free_address
-        }
-        List.append(Dict)
-
-    return json.dumps(List)
-
-
-@app.route('/backend/freelancerhistory', methods=["GET"])
-def freelancerhistory():
-    content = request.get_json()
-    email = content["free_email"]
-
-    rows = Transaction.query.filter(Transaction.free_email == email).all()
-
-    List = []
-    Dict = {}
-
-    for row in rows:
-        Dict = {
-            'emp_name': row.emp_name,
-            'emp_email': row.emp_email,
-            'project': row.project,
-            'date_started': row.date_started,
-            'deadline': row.deadline,
-            'days_hours_work': row.days_hours_work,
-            'rate_day_hour': row.rate_day_hour,
-            'proposed_amount': row.proposed_amount,
-            'no_of_leaves': row.no_of_leaves,
-            'rate_for_leave_deduct': row.rate_for_leave_deduct,
-            'amount_paid': row.amount_paid,
-            'emp_address': row.emp_address
-        }
-        List.append(Dict)
-
-    return json.dumps(List)
 
 
 @app.route('/backend/projectworking', methods=["GET", "POST"])
