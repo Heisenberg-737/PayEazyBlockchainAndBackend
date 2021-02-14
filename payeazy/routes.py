@@ -13,6 +13,34 @@ from block import getAccountBalance, callconstructor, transferMoneyToFreelancer,
 def catch():
     return app.send_static_file('index.html')
 
+@app.route('/employeePage', methods=["GET", "POST"])
+def catch_employee():
+    return app.send_static_file('index.html')
+
+
+@app.route('/employerPage', methods=["GET", "POST"])
+def catch_employer():
+    return app.send_static_file('index.html')
+
+
+@app.route('/login-page-f', methods=["GET", "POST"])
+def catch_login_freelancer():
+    return app.send_static_file('index.html')
+
+@app.route('/login-page-e', methods=["GET", "POST"])
+def catch_login_employer():
+    return app.send_static_file('index.html')
+
+
+@app.route('/register-page-e', methods=["GET", "POST"])
+def catch_employer_register():
+    return app.send_static_file('index.html')
+
+
+@app.route('/register-page-f', methods=["GET", "POST"])
+def catch_freelancer_register():
+    return app.send_static_file('index.html')
+
 
 # Backend Routes
 
